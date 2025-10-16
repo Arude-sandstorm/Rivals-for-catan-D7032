@@ -7,17 +7,40 @@ import java.util.*;
 
 public class Systems {
 
-    // --- Produces 1 resource from each region owned by each player ---
+    // --- Dice value for this turn ---
+    public static class DiceComponent implements Component {
+        public int value;
+        public DiceComponent(int value) { this.value = value; }
+    }
+
+    // --- Rolls 2 dice and updates DiceComponent ---
+    public static class DiceSystem extends SystemBase {
+        private final Random rng = new Random();
+        @Override
+        public void update(World world) {
+            int roll = rng.nextInt(6) + 1 + rng.nextInt(6) + 1;
+            Entity diceEntity = world.createEntity();
+            world.addComponent(diceEntity, new DiceComponent(roll));
+            System.out.println("🎲 Dice rolled: " + roll);
+        }
+    }
+
+    // --- Produces resources if dice match region number ---
     public static class ProductionSystem extends SystemBase {
         @Override
         public void update(World world) {
+            var diceEntities = world.getEntitiesWith(DiceComponent.class);
+            if (diceEntities.isEmpty()) return;
+            int dice = world.getComponent(diceEntities.get(0), DiceComponent.class).value;
+
             for (Entity region : world.getEntitiesWith(RegionComponent.class, OwnerComponent.class)) {
                 var reg = world.getComponent(region, RegionComponent.class);
+                if (reg.productionNumber != dice) continue; // only produce if dice matches
                 var owner = world.getComponent(region, OwnerComponent.class).owner;
                 var inv = world.getComponent(owner, ResourceInventoryComponent.class);
                 inv.add(reg.produces, 1);
                 System.out.println(" -> " + world.getComponent(owner, PlayerComponent.class).name +
-                                   " gains 1 " + reg.produces);
+                        " gains 1 " + reg.produces + " (region " + reg.productionNumber + ")");
             }
         }
     }

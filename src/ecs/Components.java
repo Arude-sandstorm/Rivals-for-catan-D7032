@@ -37,7 +37,11 @@ public class Components {
 
     public static class RegionComponent implements Component {
         public ResourceType produces;
-        public RegionComponent(ResourceType produces) { this.produces = produces; }
+        public int productionNumber;
+        public RegionComponent(ResourceType produces, int productionNumber) {
+            this.produces = produces;
+            this.productionNumber = productionNumber;
+        }
     }
 
     public static class OwnerComponent implements Component {
@@ -57,4 +61,7 @@ public class Components {
     public static class VictoryPointsComponent implements Component {
         public int points = 0;
     }
+
+
+
 }
