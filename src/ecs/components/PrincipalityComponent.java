@@ -6,10 +6,8 @@ import java.util.List;
 
 /**
  * Stores a dynamic 2D grid of card entity ids (Integer), null = empty cell.
- * This mirrors the old `principality` List<List<Card>> but keeps only entity ids
- * so it fits the ECS design.
  */
-public class PrincipalityComponent extends NetworkComponent implements Component {
+public class PrincipalityComponent implements Component {
     public final List<List<Integer>> grid = new ArrayList<>();
 
     public PrincipalityComponent() {
@@ -34,11 +32,6 @@ public class PrincipalityComponent extends NetworkComponent implements Component
         grid.get(r).set(c, cardEntityId);
     }
 
-    /**
-     * If a center-card was placed on the leftmost or rightmost column, grow the grid
-     * like the old expandAfterEdgeBuild() and return the (possibly updated) column index
-     * where the card now sits.
-     */
     public int expandAfterEdgeBuild(int col) {
         int cols = grid.get(0).size();
         if (col == 0) {

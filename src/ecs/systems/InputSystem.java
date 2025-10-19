@@ -1,3 +1,4 @@
+//java
 package ecs.systems;
 
 import com.google.gson.Gson;
@@ -53,9 +54,10 @@ public class InputSystem {
                 payload.put("cmd", line);
                 msg.payload = payload;
 
+                // world.getEntity(...) returns Optional<Entity> -> unwrap to nullable Entity
                 Entity playerEntity = null;
                 try {
-                    playerEntity = world.getEntity(localPlayerEntityId);
+                    playerEntity = world.getEntity(localPlayerEntityId).orElse(null);
                 } catch (Exception ignored) {}
 
                 NetworkComponent nc = null;

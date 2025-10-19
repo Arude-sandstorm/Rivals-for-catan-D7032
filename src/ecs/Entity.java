@@ -1,8 +1,7 @@
-// Entity.java
+// java
 package ecs;
 
 import ecs.components.Component;
-import ecs.components.PlayerComponent;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -15,7 +14,9 @@ public class Entity {
     public Entity() { this.id = NEXT_ID.getAndIncrement(); }
     public int getId() { return id; }
 
-    public <T extends Component> void add(PlayerComponent comp) {
+    // Generic add method accepting any Component implementation
+    public <T extends Component> void add(T comp) {
+        if (comp == null) return;
         components.put(comp.getClass(), comp);
     }
 
@@ -31,3 +32,4 @@ public class Entity {
     public <T extends Component> void remove(Class<T> cls) {
         components.remove(cls);
     }
+}
