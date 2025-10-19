@@ -9,7 +9,7 @@ import java.util.List;
  * This mirrors the old `principality` List<List<Card>> but keeps only entity ids
  * so it fits the ECS design.
  */
-public class PrincipalityComponent implements Component {
+public class PrincipalityComponent extends NetworkComponent implements Component {
     public final List<List<Integer>> grid = new ArrayList<>();
 
     public PrincipalityComponent() {
