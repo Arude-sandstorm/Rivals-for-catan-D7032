@@ -6,84 +6,106 @@ import RfC.core.Entity;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.List;
+import java.util.Optional;
 
 public class EventSystem extends GameSystem {
+    private EventDeckSystem eventDeckSystem;
+    private EventCardEffectSystem eventEffectSystem;
+
+    public EventSystem(EventDeckSystem deckSystem, EventCardEffectSystem effectSystem) {
+        this.eventDeckSystem = deckSystem;
+        this.eventEffectSystem = effectSystem;
+    }
 
     @Override
     public void update(List<Entity> entities) {
-        Optional<Entity> diceEntity = world.getEntities().stream().filter(e -> e.hasComponent(DiceComponent.class)).findFirst();
+        Optional<Entity> diceEntity = world.getEntities().stream()
+                .filter(e -> e.hasComponent(DiceComponent.class))
+                .findFirst();
         if (!diceEntity.isPresent()) return;
+
         DiceComponent d = diceEntity.get().getComponent(DiceComponent.class);
         int eventRoll = d.eventRoll;
-        // If brigand (1) resolve immediately before production.
-        // Implement simplified behavior for key events: brigand, trade, celebration, plentiful (mapping PDF)
-        System.out.println("Resolving event roll: " + eventRoll);
+
         Entity active = getActivePlayer();
         if (active == null) return;
-        PlayerComponent pc = active.getComponent(PlayerComponent.class);
 
         switch (eventRoll) {
             case 1:
-                // Brigand: if you have more than 7 resources you lose all WOOL and GOLD
-                int totalResources = pc.resources.values().stream().mapToInt(Integer::intValue).sum();
-                if (totalResources > 7) {
-                    pc.setResource(ResourceType.WOOL, 0);
-                    pc.setResource(ResourceType.GOLD, 0);
-                    System.out.println(pc.name + " attacked by brigand: wool and gold removed.");
-                } else {
-                    System.out.println(pc.name + " attacked by brigand but has <=7 resources.");
-                }
+                handleBrigand(active);
                 break;
             case 2:
-                // Trade: if player has trade advantage receive 1 resource of choice from opponent
-                if (pc.hasTradeAdvantage) {
-                    Entity opponent = getOpponent(active);
-                    if (opponent != null) {
-                        PlayerComponent op = opponent.getComponent(PlayerComponent.class);
-                        // simple: take first non-zero resource from opponent, otherwise NONE
-                        for (ResourceType rt : ResourceType.values()) {
-                            if (rt==ResourceType.NONE) continue;
-                            if (op.getResource(rt) > 0) {
-                                op.addResource(rt, -1);
-                                pc.addResource(rt, 1);
-                                System.out.println(pc.name + " traded and took 1 " + rt + " from " + op.name);
-                                break;
-                            }
-                        }
-                    }
-                }
+                handleTrade(active);
                 break;
             case 3:
-                // Celebration: if you have most skill points you alone receive 1 resource of your choice.
-                // Simplified: give active 1 WOOL.
-                pc.addResource(ResourceType.WOOL, 1);
-                System.out.println(pc.name + " receives 1 WOOL from Celebration.");
+                handleCelebration(active);
                 break;
             case 4:
-                // Plentiful Harvest: each player receives 1 resource of choice (simplified as GRAIN)
-                for (Entity e : world.getEntities()) {
-                    if (e.hasComponent(PlayerComponent.class)) {
-                        e.getComponent(PlayerComponent.class).addResource(ResourceType.GRAIN, 1);
-                    }
-                }
-                System.out.println("Plentiful Harvest: each player gets 1 GRAIN.");
+                handleHarvest();
                 break;
             case 5:
             case 6:
-                // Event card: not implemented fully here - simulate draw
-                System.out.println("Event card: draw and resolve (not fully implemented).");
-                break;
-            default:
+                // Event card draw
+                Entity eventCard = eventDeckSystem.drawEventCard();
+                if (eventCard != null) {
+                    eventEffectSystem.resolveEventCard(eventCard, active);
+                }
                 break;
         }
     }
 
     private Entity getActivePlayer() {
-        // naive: first entity with PlayerComponent is active for demo purposes
-        return world.getEntities().stream().filter(e -> e.hasComponent(PlayerComponent.class)).findFirst().orElse(null);
+        return world.getEntities().stream()
+                .filter(e -> e.hasComponent(PlayerComponent.class))
+                .findFirst().orElse(null);
     }
 
     private Entity getOpponent(Entity active) {
-        return world.getEntities().stream().filter(e -> e.hasComponent(PlayerComponent.class) && !e.getId().equals(active.getId())).findFirst().orElse(null);
+        return world.getEntities().stream()
+                .filter(e -> e.hasComponent(PlayerComponent.class)
+                        && !e.getId().equals(active.getId()))
+                .findFirst().orElse(null);
+    }
+
+    private void handleBrigand(Entity active) {
+        PlayerComponent pc = active.getComponent(PlayerComponent.class);
+        int total = pc.resources.values().stream().mapToInt(Integer::intValue).sum();
+        if (total > 7) {
+            pc.setResource(ResourceType.WOOL, 0);
+            pc.setResource(ResourceType.GOLD, 0);
+            System.out.println(pc.name + " loses wool and gold (Brigand event).");
+        }
+    }
+
+    private void handleTrade(Entity active) {
+        PlayerComponent pc = active.getComponent(PlayerComponent.class);
+        if (!pc.hasTradeAdvantage) return;
+        Entity opponent = getOpponent(active);
+        if (opponent == null) return;
+        PlayerComponent op = opponent.getComponent(PlayerComponent.class);
+        for (ResourceType rt : ResourceType.values()) {
+            if (rt != ResourceType.NONE && op.getResource(rt) > 0) {
+                op.addResource(rt, -1);
+                pc.addResource(rt, 1);
+                System.out.println(pc.name + " takes 1 " + rt + " from " + op.name);
+                break;
+            }
+        }
+    }
+
+    private void handleCelebration(Entity active) {
+        PlayerComponent pc = active.getComponent(PlayerComponent.class);
+        pc.addResource(ResourceType.WOOL, 1);
+        System.out.println(pc.name + " receives 1 WOOL (Celebration event).");
+    }
+
+    private void handleHarvest() {
+        for (Entity e : world.getEntities()) {
+            if (e.hasComponent(PlayerComponent.class)) {
+                e.getComponent(PlayerComponent.class).addResource(ResourceType.GRAIN, 1);
+            }
+        }
+        System.out.println("All players receive 1 GRAIN (Plentiful Harvest).");
     }
 }
