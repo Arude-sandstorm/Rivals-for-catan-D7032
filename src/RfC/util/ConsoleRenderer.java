@@ -1,8 +1,5 @@
 package RfC.util;
-import RfC.components.BoardComponent;
-import RfC.components.CardComponent;
-import RfC.components.PlayerComponent;
-import RfC.components.RegionComponent;
+import RfC.components.*;
 import RfC.core.Entity;
 import RfC.core.World;
 
@@ -84,9 +81,16 @@ public class ConsoleRenderer {
     }
 
     public String renderHand(Entity player) {
-        PlayerComponent pc = player.getComponent(PlayerComponent.class);
-        // placeholder
-        return "Hand: [3 cards]\n";
+        HandComponent hand = player.getComponent(HandComponent.class);
+        if (hand == null) return "Hand: []\n";
+        StringBuilder sb = new StringBuilder();
+        sb.append("Hand (").append(hand.size()).append("):\n");
+        for (int i=0;i<hand.cards.size();i++) {
+            CardComponent cc = hand.cards.get(i).getComponent(CardComponent.class);
+            sb.append("  [").append(i).append("] ").append(cc.name)
+                    .append("  {type: ").append(cc.cardType).append("}\n");
+        }
+        return sb.toString();
     }
 
     public String renderResources(PlayerComponent pc) {
@@ -124,4 +128,7 @@ public class ConsoleRenderer {
         }
         return "";
     }
+
+
+
 }

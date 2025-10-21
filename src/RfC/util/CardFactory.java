@@ -7,8 +7,8 @@ import RfC.core.CardType;
 import RfC.core.Entity;
 import java.io.FileReader;
 import java.io.Reader;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
@@ -107,4 +107,20 @@ public class CardFactory {
         if (lower.contains("gold")) return ResourceType.GOLD;
         return ResourceType.NONE;
     }
+    public static Map<ResourceType,Integer> parseCost(String s) {
+        Map<ResourceType,Integer> m = new java.util.EnumMap<>(ResourceType.class);
+        if (s == null) return m;
+        for (char ch : s.toUpperCase().toCharArray()) {
+            switch (ch) {
+                case 'L' -> m.merge(ResourceType.WOOD, 1, Integer::sum);
+                case 'B' -> m.merge(ResourceType.BRICK,1, Integer::sum);
+                case 'W' -> m.merge(ResourceType.WOOL, 1, Integer::sum);
+                case 'O' -> m.merge(ResourceType.ORE,  1, Integer::sum);
+                case 'G' -> m.merge(ResourceType.GRAIN,1, Integer::sum);
+                case 'A' -> m.merge(ResourceType.GOLD, 1, Integer::sum);
+            }
+        }
+        return m;
+    }
+
 }

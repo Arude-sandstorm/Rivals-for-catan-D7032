@@ -8,16 +8,24 @@ import RfC.util.CardFactory;
 import java.util.*;
 import RfC.systems.PlayerIOSystem;
 import RfC.util.ConsoleRenderer;
+import RfC.util.StartingLayoutBuilder;
 
 public class Game {
     public static void main(String[] args) {
         World world = new World();
         PlayerIOSystem ioSystem = new PlayerIOSystem();
         ConsoleRenderer renderer = new ConsoleRenderer();
+        DeckComponent[] basicStacks = new DeckComponent[]{
+                new DeckComponent("Stack 1"),
+                new DeckComponent("Stack 2"),
+                new DeckComponent("Stack 3"),
+                new DeckComponent("Stack 4")
+        };
+
 
         // --- Setup players ---
-        Entity p1 = createPlayer(world, "Alice");
-        Entity p2 = createPlayer(world, "Bob");
+        Entity p1 = createPlayer(world, "Alice",false,basicStacks);
+        Entity p2 = createPlayer(world, "Bob",true, basicStacks);
         List<Entity> players = List.of(p1, p2);
 
         // --- Systems ---
@@ -74,9 +82,18 @@ public class Game {
             runActionPhase(active, world, ioSystem);
             ioSystem.refreshDisplay(active, world);
 
-            // ---- PHASE 3: End of Turn & Victory ----
+
+            // ---- PHASE 3: Replenish Hand (Rule 4c) ----
+            replenishToThree(active, ioSystem, basicStacks);
+            ioSystem.refreshDisplay(active, world);
+
+            // ---- PHASE 4: Exchange (Rule 4d) ----
+            maybeExchangeOne(active, ioSystem, basicStacks);
+            ioSystem.refreshDisplay(active, world);
+
+            // ---- PHASE 5: End of Turn / Victory Check ----
             victorySystem.update(world.getEntities());
-            if (activePC.victoryPoints >= 7) {
+            if (active.getComponent(PlayerComponent.class).victoryPoints >= 7) {
                 ioSystem.sendMessage(active, "🎉 You win the game with 7 VP!");
                 ioSystem.refreshDisplay(active, world);
                 running = false;
@@ -86,25 +103,36 @@ public class Game {
             }
         }
 
+
+
+
         System.out.println("\nGame Over. Thanks for playing!");
     }
 
     // --- Helper methods ---
-
-    private static Entity createPlayer(World world, String name) {
+    protected static Entity createPlayer(World world, String name, boolean mirror,
+                                       DeckComponent[] basicStacks) {
         Entity player = new Entity();
         PlayerComponent pc = new PlayerComponent(name);
         BoardComponent board = new BoardComponent();
         PlayerIOComponent io = new PlayerIOComponent();
+        HandComponent hand = new HandComponent();
 
-        player.addComponent(pc);
-        player.addComponent(board);
-        player.addComponent(io);
+        player.addComponent(pc); player.addComponent(board);
+        player.addComponent(io); player.addComponent(hand);
         world.addEntity(player);
 
-        addStartingBoard(player, board);
+        StartingLayoutBuilder.buildIntroPrincipality(player, board, mirror);
+
+        // draw initial 3, player chooses a stack for each draw (simple: from stack 1)
+        for (int i=0;i<3;i++) {
+            Entity drawn = basicStacks[0].draw();
+            if (drawn != null) hand.add(drawn);
+        }
         return player;
     }
+
+
 
 
     private static void addStartingBoard(Entity player, BoardComponent board) {
@@ -200,4 +228,43 @@ public class Game {
             io.sendMessage(player, "You don't have any " + give + " to trade.");
         }
     }
+    private static void replenishToThree(Entity player, PlayerIOSystem io, DeckComponent[] stacks) {
+        HandComponent hand = player.getComponent(HandComponent.class);
+        if (hand == null) return;
+        while (!hand.isFull()) {
+            String pick = io.getPlayerChoice(player, "Pick a stack to draw (1-4)",
+                    new String[]{"Stack 1","Stack 2","Stack 3","Stack 4"});
+            int idx = Math.max(0, Math.min(3, Integer.parseInt(pick.replaceAll("[^0-9]",""))-1));
+            Entity drawn = stacks[idx].draw();
+            if (drawn != null) hand.add(drawn);
+            else io.sendMessage(player, "That stack is empty.");
+        }
+    }
+
+    private static void maybeExchangeOne(Entity player, PlayerIOSystem io, DeckComponent[] stacks) {
+        HandComponent hand = player.getComponent(HandComponent.class);
+        if (hand == null || hand.cards.isEmpty()) return;
+        String doEx = io.getPlayerChoice(player, "Exchange a card?","Yes|No".split("\\|"));
+        if (!"Yes".equals(doEx)) return;
+
+        // choose card
+        String[] cardOpts = new String[hand.cards.size()];
+        for (int i=0;i<cardOpts.length;i++) {
+            cardOpts[i] = "["+i+"] " + hand.cards.get(i).getComponent(CardComponent.class).name;
+        }
+        String which = io.getPlayerChoice(player, "Choose a card to return", cardOpts);
+        int idx = Integer.parseInt(which.replaceAll("[^0-9]",""));
+        Entity returning = hand.cards.remove(idx);
+
+        // choose stack
+        String stackPick = io.getPlayerChoice(player, "Choose a stack to exchange with",
+                new String[]{"Stack 1","Stack 2","Stack 3","Stack 4"});
+        int sIdx = Math.max(0, Math.min(3, Integer.parseInt(stackPick.replaceAll("[^0-9]",""))-1));
+
+        // return to bottom, draw new top
+        stacks[sIdx].returnToBottom(returning);
+        Entity drawn = stacks[sIdx].draw();
+        if (drawn != null) hand.add(drawn);
+    }
+
 }

@@ -80,9 +80,12 @@ public class EventSystem extends GameSystem {
 
     private void handleTrade(Entity active) {
         PlayerComponent pc = active.getComponent(PlayerComponent.class);
-        if (!pc.hasTradeAdvantage) return;
+        // grant or use trade advantage — simple approach:
+        pc.hasTradeAdvantage = true; // e.g., event grants it
         Entity opponent = getOpponent(active);
         if (opponent == null) return;
+        if (!pc.hasTradeAdvantage) return;
+
         PlayerComponent op = opponent.getComponent(PlayerComponent.class);
         for (ResourceType rt : ResourceType.values()) {
             if (rt != ResourceType.NONE && op.getResource(rt) > 0) {
@@ -96,9 +99,12 @@ public class EventSystem extends GameSystem {
 
     private void handleCelebration(Entity active) {
         PlayerComponent pc = active.getComponent(PlayerComponent.class);
+        // Award resource and skill advantage marker
         pc.addResource(ResourceType.WOOL, 1);
-        System.out.println(pc.name + " receives 1 WOOL (Celebration event).");
+        pc.hasSkillAdvantage = true;
+        System.out.println(pc.name + " receives 1 WOOL and gains Skill advantage.");
     }
+
 
     private void handleHarvest() {
         for (Entity e : world.getEntities()) {

@@ -9,6 +9,10 @@ import java.util.Map;
 
 public class PlayerComponent implements Component {
     public String name;
+    public boolean hasTradeAdvantage = false;
+    public boolean hasStrengthAdvantage = false;
+    public boolean hasSkillAdvantage = false;
+
 
     // --- Victory and sub-point categories ---
     public int victoryPoints = 0;
@@ -20,8 +24,7 @@ public class PlayerComponent implements Component {
     // --- Resources ---
     public Map<ResourceType, Integer> resources = new HashMap<>();
 
-    // --- Player-specific traits ---
-    public boolean hasTradeAdvantage = false;
+
 
     public PlayerComponent(String name) {
         this.name = name;

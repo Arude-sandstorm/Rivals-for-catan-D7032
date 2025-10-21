@@ -1,6 +1,7 @@
 // DeckComponent.java
 package RfC.components;
 
+import RfC.core.CardType;
 import RfC.core.Component;
 import RfC.core.Entity;
 
@@ -48,6 +49,41 @@ public class DeckComponent implements Component {
     }
 
     public int size() { return cards.size(); }
+
+    public List<Entity> drawN(int n) {
+        List<Entity> out = new ArrayList<>();
+        for (int i=0;i<n;i++) {
+            Entity e = draw();
+            if (e==null) break;
+            out.add(e);
+        }
+        return out;
+    }
+    public static DeckComponent buildEventDeck(List<Entity> allCards) {
+        DeckComponent eventDeck = new DeckComponent("Event Deck");
+        java.util.List<Entity> others = new java.util.ArrayList<>();
+        Entity yule = null;
+
+        for (Entity c : allCards) {
+            CardComponent cc = c.getComponent(CardComponent.class);
+            if (cc.cardType == CardType.EVENT) {
+                if (cc.name.toLowerCase().contains("yule")) yule = c;
+                else others.add(c);
+            }
+        }
+        java.util.Collections.shuffle(others);
+
+        // Insert Yule 4th from bottom:
+        // bottom = index 0; top = last (or reverse if you prefer)
+        for (Entity e : others) eventDeck.add(e);
+        if (yule != null) {
+            int pos = Math.min(3, eventDeck.size()); // 0-based: 0..3 from bottom
+            eventDeck.cards.add(pos, yule);
+        }
+        return eventDeck;
+    }
+
+
 }
 
 
