@@ -23,7 +23,7 @@ public class EventDeckSystem extends GameSystem {
             return null;
         }
         Entity card = eventDeck.draw();
-        System.out.println("Drew event card: " + card.getComponent(CardComponent.class).cardName);
+        System.out.println("Drew event card: " + card.getComponent(CardComponent.class).name);
         return card;
     }
 }

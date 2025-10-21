@@ -59,13 +59,12 @@ package RfC.components;
 import RfC.core.CardType;
 import RfC.core.Component;
 
-import java.util.*;
 public class CardComponent implements Component {
-    public String cardName;
+    public String name;
     public CardType cardType;
 
     public CardComponent(String name, CardType type) {
-        this.cardName = name; this.cardType = type;
+        this.name = name; this.cardType = type;
     }
 }
 

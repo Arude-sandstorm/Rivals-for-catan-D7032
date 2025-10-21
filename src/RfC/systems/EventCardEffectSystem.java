@@ -9,7 +9,7 @@ import java.util.List;
 public class EventCardEffectSystem extends GameSystem {
 
     public void resolveEventCard(Entity card, Entity activePlayer) {
-        String name = card.getComponent(CardComponent.class).cardName.toLowerCase();
+        String name = card.getComponent(CardComponent.class).name.toLowerCase();
         PlayerComponent pc = activePlayer.getComponent(PlayerComponent.class);
 
         switch (name) {
